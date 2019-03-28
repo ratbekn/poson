@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
             handler=self.close)
 
         self._start_debug_act = self._create_act(
-            'Start Debug', 'bug.png',
+            'Start Debug', 'debug.png',
             shortcut='Ctrl+F5',
             status_tip='debug program',
             handler=self._start_debug)
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
 
-        self._globals_watcher.setWordWrap(True)
+        self._globals_watcher.setWordWrap(False)
 
     def _init_globals_watcher_dock(self):
         self._globals_watcher_dock.setAllowedAreas(Qt.RightDockWidgetArea)
@@ -201,7 +201,7 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
 
-        self._locals_watcher.setWordWrap(True)
+        self._locals_watcher.setWordWrap(False)
 
     def _init_locals_watcher_dock(self):
         self._locals_watcher_dock.setAllowedAreas(Qt.RightDockWidgetArea)

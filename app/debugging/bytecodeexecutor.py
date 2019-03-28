@@ -98,7 +98,6 @@ class BytecodeExecutor:
 
         Переводит все значения переменных в cтроковое представление
         Удаляет отладочные переменные
-        Обрезаем слишком длинные строки
 
         :param variables: словарь с глобальными/локальными переменными
         :return новый подготовленный словарь
@@ -110,9 +109,6 @@ class BytecodeExecutor:
 
             if not isinstance(v, str):
                 v = repr(v)
-
-            if len(v) > 40:
-                v = v[:40] + '...'
 
             prepared[k] = v
 
