@@ -83,6 +83,17 @@ class MainWindow(QMainWindow):
             shortcut='F8',
             status_tip='step to the next line in this file',
             handler=self._step_over)
+        self._step_in_act = self._create_act(
+            'Step In', 'step_in.png',
+            shortcut='F7',
+            status_tip='step to the next line executed',
+            handler=self._step_in)
+        self._step_out_act = self._create_act(
+            'Step Out', 'step_out.png',
+            shortcut='F9',
+            status_tip='step to the first line executed after '
+                       'returning from this method',
+            handler=self._stop_out)
         self._stop_debug_act = self._create_act(
             'Stop Debug', 'stop.png',
             shortcut='Ctrl+F2',
@@ -150,6 +161,15 @@ class MainWindow(QMainWindow):
 
         self.start_debug.emit(source)
 
+    def _step_over(self):
+        self.step_over.emit()
+
+    def _step_in(self):
+        pass
+
+    def _stop_out(self):
+        pass
+
     def _stop_debug(self):
         self.stop_debug.emit()
         self._finish_debug()
@@ -157,9 +177,6 @@ class MainWindow(QMainWindow):
     def _finish_debug(self):
         self.code_editor.setEnabled(True)
         qApp.setCursorFlashTime(qApp.cursorFlashTime())
-
-    def _step_over(self):
-        self.step_over.emit()
 
     def _init_menu_bar(self):
         file_menu = self._menu_bar.addMenu('&File')
@@ -171,6 +188,8 @@ class MainWindow(QMainWindow):
 
         self._toolbar.addAction(self._start_debug_act)
         self._toolbar.addAction(self._step_over_act)
+        self._toolbar.addAction(self._step_in_act)
+        self._toolbar.addAction(self._step_out_act)
         self._toolbar.addAction(self._stop_debug_act)
 
         self.addToolBar(self._toolbar)
