@@ -4,6 +4,8 @@ import types
 
 from bytecode import Bytecode, Instr, Label, Compare
 
+from .common import DebugCommand
+
 
 def _get_import_sys_instructions(line_no):
     return [
@@ -23,18 +25,32 @@ class BytecodeModifier:
         initial_bytecode = Bytecode.from_code(code)
 
         modified_bytecode = Bytecode()
+        modified_bytecode.first_lineno = initial_bytecode.first_lineno
         modified_bytecode.argcount = code.co_argcount
+        modified_bytecode.argnames = initial_bytecode.argnames
+        modified_bytecode.name = initial_bytecode.name
         modified_bytecode.freevars = code.co_freevars
         modified_bytecode.cellvars = code.co_cellvars
 
-        # добавляем инструкции отладки перед первой строкой
-        if not inner:
-            line_no = initial_bytecode.first_lineno
-            modified_bytecode.extend(
-                    _get_import_sys_instructions(line_no)
-                    + self._get_trace_func_call_instructions(line_no))
+        first_line_no = initial_bytecode.first_lineno
 
-        previous_line_no = initial_bytecode.first_lineno
+        if inner:
+            modified_bytecode.extend([
+                Instr('LOAD_NAME', arg=self._command, lineno=first_line_no),
+                Instr(
+                    'LOAD_CONST',
+                    arg=DebugCommand.STEP_OVER, lineno=first_line_no),
+                Instr('COMPARE_OP', arg=Compare.EQ, lineno=first_line_no),
+                Instr('STORE_NAME', arg='is_over', lineno=first_line_no),
+            ])
+
+        # добавляем инструкции отладки перед первой строкой модуля
+        if not inner:
+            modified_bytecode.extend(
+                    _get_import_sys_instructions(first_line_no)
+                    + self._get_trace_func_call_instructions(first_line_no))
+
+        previous_line_no = first_line_no
         for instr in initial_bytecode:
             if not isinstance(instr, Instr):
                 modified_bytecode.append(instr)
@@ -45,10 +61,21 @@ class BytecodeModifier:
                 new_co = self.modify(instr.arg, inner=True)
                 instr.set(old_instr_name, new_co)
 
+            skip = Label()
             if instr.lineno != previous_line_no:
+                if inner:
+                    modified_bytecode.extend([
+                        Instr(
+                            'LOAD_NAME', arg='is_over', lineno=first_line_no),
+                        Instr(
+                            'POP_JUMP_IF_TRUE', arg=skip, lineno=first_line_no)
+                    ])
+
                 modified_bytecode.extend(
                     self._get_trace_func_call_instructions(instr.lineno))
 
+                if inner:
+                    modified_bytecode.append(skip)
                 previous_line_no = instr.lineno
 
             modified_bytecode.append(instr)
