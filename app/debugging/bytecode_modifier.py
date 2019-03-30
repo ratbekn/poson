@@ -19,13 +19,20 @@ class BytecodeModifier:
         self._trace_func = trace_func
         self._command = command
 
-    def modify(self, code):
+    def modify(self, code, *, inner=False):
         initial_bytecode = Bytecode.from_code(code)
 
         modified_bytecode = Bytecode()
         modified_bytecode.argcount = code.co_argcount
         modified_bytecode.freevars = code.co_freevars
         modified_bytecode.cellvars = code.co_cellvars
+
+        # добавляем инструкции отладки перед первой строкой
+        if not inner:
+            line_no = initial_bytecode.first_lineno
+            modified_bytecode.extend(
+                    _get_import_sys_instructions(line_no)
+                    + self._get_trace_func_call_instructions(line_no))
 
         previous_line_no = initial_bytecode.first_lineno
         for instr in initial_bytecode:
@@ -35,7 +42,7 @@ class BytecodeModifier:
 
             if isinstance(instr.arg, types.CodeType):
                 old_instr_name = instr.name
-                new_co = self.modify(instr.arg)
+                new_co = self.modify(instr.arg, inner=True)
                 instr.set(old_instr_name, new_co)
 
             if instr.lineno != previous_line_no:
@@ -45,12 +52,6 @@ class BytecodeModifier:
                 previous_line_no = instr.lineno
 
             modified_bytecode.append(instr)
-
-        # добавляем инструкции отладки перед первой строкой
-        line_no = initial_bytecode.first_lineno
-        modified_bytecode[0:0] = (
-            _get_import_sys_instructions(line_no)
-            + self._get_trace_func_call_instructions(line_no))
 
         code = modified_bytecode.to_code()
 

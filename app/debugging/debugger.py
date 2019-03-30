@@ -21,8 +21,13 @@ class Debugger:
         self._commands = Queue()
         self._snapshots = Queue()
         self._finished = Event()
+
         self._bytecode_modifier = BytecodeModifier(
             self._TRACE_FUNC, self._COMMAND)
+        self._globals_ = {
+            self._TRACE_FUNC: self._trace,
+            self._COMMAND: None
+        }
 
     def start(self, source: Text, filename: Text):
         """
@@ -118,11 +123,7 @@ class Debugger:
             self ._finished.set()
 
     def _run(self, code):
-        globals_ = {
-            self._TRACE_FUNC: self._trace,
-            self._COMMAND: None
-        }
-        exec(code, globals_)
+        exec(code, self._globals_)
 
     def _trace(self):
         frame = sys._getframe(1)
@@ -137,3 +138,5 @@ class Debugger:
 
         if command is DebuggerExit:
             raise DebuggerExit()
+
+        self._globals_[self._COMMAND] = command
