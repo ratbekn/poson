@@ -57,6 +57,12 @@ class Debugger:
         if not source:
             raise EmptySourceCode()
 
+        if not self._commands.empty():
+            self._commands = Queue()
+
+        if not self._snapshots.empty():
+            self._snapshots = Queue()
+
         modified_code = self._compile(source, filename)
 
         t = Thread(target=self._bootstrap, args=(modified_code, ), daemon=True)
@@ -68,7 +74,6 @@ class Debugger:
 
         :raise DebuggerNotStarted: отладчик не запущен
         """
-
         self._commands.put(command)
 
     def get_snapshot(self) -> dict:
