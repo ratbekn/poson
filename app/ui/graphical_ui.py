@@ -53,9 +53,11 @@ class WatcherModel(QAbstractTableModel):
 
 
 class MainWindow(QMainWindow):
-    start_debug = pyqtSignal(str)
-    step_over = pyqtSignal()
-    stop_debug = pyqtSignal()
+    start_clicked = pyqtSignal(str)
+    step_over_clicked = pyqtSignal()
+    step_in_clicked = pyqtSignal()
+    step_out_clicked = pyqtSignal()
+    stop_clicked = pyqtSignal()
 
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -130,6 +132,11 @@ class MainWindow(QMainWindow):
         self.code_editor = CodeEditor()
         self.setCentralWidget(self.code_editor)
 
+    def update(self, global_variables, local_variables, line_no):
+        self._highlight_line(line_no)
+        self._globals_watcher_model.update(global_variables)
+        self._locals_watcher_model.update(local_variables)
+
     def _create_act(
             self, name, icon, shortcut=None, status_tip=None,
             handler=None):
@@ -159,19 +166,19 @@ class MainWindow(QMainWindow):
 
         self.code_editor.setDisabled(True)
 
-        self.start_debug.emit(source)
+        self.start_clicked.emit(source)
 
     def _step_over(self):
-        self.step_over.emit()
+        self.step_over_clicked.emit()
 
     def _step_in(self):
-        pass
+        self.step_in_clicked.emit()
 
     def _stop_out(self):
-        pass
+        self.step_over_clicked.emit()
 
     def _stop_debug(self):
-        self.stop_debug.emit()
+        self.stop_clicked.emit()
         self._finish_debug()
 
     def _finish_debug(self):
@@ -237,11 +244,6 @@ class MainWindow(QMainWindow):
         self._call_stack_dock.setWidget(label)
 
         self.addDockWidget(Qt.RightDockWidgetArea, self._call_stack_dock)
-
-    def on_step_over(self, line_no, globals_, locals_):
-        self._highlight_line(line_no)
-        self._globals_watcher_model.update(globals_)
-        self._locals_watcher_model.update(locals_)
 
     def _highlight_line(self, line_no):
         if not line_no:

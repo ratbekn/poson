@@ -1,4 +1,3 @@
-from .debugger import Debugger
-from .bytecodeexecutor import DebuggingEvent, DebuggingEventType
+from .debugger import Debugger, DebugCommand, DebuggerExit
 
-__all__ = [Debugger, DebuggingEvent, DebuggingEventType]
+__all__ = [Debugger, DebugCommand, DebuggerExit]
