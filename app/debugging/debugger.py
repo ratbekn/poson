@@ -8,27 +8,8 @@ from types import CodeType
 from queue import Queue
 
 from .bytecode_modifier import BytecodeModifier
-
-
-class DebuggerExit(Exception):
-    pass
-
-
-class DebuggerNotStarted(Exception):
-    pass
-
-
-class EmptySourceCode(Exception):
-    pass
-
-
-class DebugCommand(Enum):
-    """
-    Команды отладки
-    """
-    STEP_OVER = auto()
-    STEP_IN = auto()
-    STEP_OUT = auto
+from .common import (
+    DebugCommand, DebuggerExit, DebuggerNotStarted, EmptySourceCode)
 
 
 class Debugger:
