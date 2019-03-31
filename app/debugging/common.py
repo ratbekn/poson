@@ -19,4 +19,4 @@ class DebugCommand(Enum):
     """
     STEP_OVER = auto()
     STEP_IN = auto()
-    STEP_OUT = auto
+    STEP_OUT = auto()

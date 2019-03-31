@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         self.step_in_clicked.emit()
 
     def _stop_out(self):
-        self.step_over_clicked.emit()
+        self.step_out_clicked.emit()
 
     def _stop_debug(self):
         self.stop_clicked.emit()
