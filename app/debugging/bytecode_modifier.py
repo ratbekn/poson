@@ -7,15 +7,6 @@ from bytecode import Bytecode, Instr, Label, Compare
 from .common import DebugCommand
 
 
-def _get_import_sys_instructions(line_no):
-    return [
-        Instr('LOAD_CONST', arg=0, lineno=line_no),
-        Instr('LOAD_CONST', arg=None, lineno=line_no),
-        Instr('IMPORT_NAME', arg='sys', lineno=line_no),
-        Instr('STORE_NAME', arg='sys', lineno=line_no)
-    ]
-
-
 class BytecodeModifier:
     def __init__(self, trace_func, command):
         self._trace_func = trace_func
@@ -47,8 +38,7 @@ class BytecodeModifier:
         # добавляем инструкции отладки перед первой строкой модуля
         if not inner:
             modified_bytecode.extend(
-                    _get_import_sys_instructions(first_line_no)
-                    + self._get_trace_func_call_instructions(first_line_no))
+                self._get_trace_func_call_instructions(first_line_no))
 
         previous_line_no = first_line_no
         for instr in initial_bytecode:
@@ -66,9 +56,21 @@ class BytecodeModifier:
                 if inner:
                     modified_bytecode.extend([
                         Instr(
-                            'LOAD_NAME', arg='is_over', lineno=first_line_no),
+                            'LOAD_NAME', arg='is_over', lineno=instr.lineno),
                         Instr(
-                            'POP_JUMP_IF_TRUE', arg=skip, lineno=first_line_no)
+                            'POP_JUMP_IF_TRUE', arg=skip, lineno=instr.lineno)
+                    ])
+                    modified_bytecode.extend([
+                        Instr(
+                            'LOAD_NAME',
+                            arg=self._command, lineno=instr.lineno),
+                        Instr(
+                            'LOAD_CONST',
+                            arg=DebugCommand.STEP_OUT, lineno=instr.lineno),
+                        Instr(
+                            'COMPARE_OP', arg=Compare.EQ, lineno=instr.lineno),
+                        Instr(
+                            'POP_JUMP_IF_TRUE', arg=skip, lineno=instr.lineno)
                     ])
 
                 modified_bytecode.extend(
@@ -89,18 +91,4 @@ class BytecodeModifier:
             Instr('LOAD_GLOBAL', arg=self._trace_func, lineno=line_no),
             Instr('CALL_FUNCTION', arg=0, lineno=line_no),
             Instr('POP_TOP', lineno=line_no)
-        ]
-
-    def _get_stop_instractions(self, place_for_continue, line_no):
-        return [
-            Instr('LOAD_NAME', arg=self._command, lineno=line_no),
-            Instr('LOAD_CONST', arg='stop', lineno=line_no),
-            Instr('COMPARE_OP', arg=Compare.EQ, lineno=line_no),
-            Instr(
-                'POP_JUMP_IF_FALSE', arg=place_for_continue, lineno=line_no),
-            Instr('LOAD_NAME', arg='sys', lineno=line_no),
-            Instr('LOAD_ATTR', arg='exit', lineno=line_no),
-            Instr('CALL_FUNCTION', arg=0, lineno=line_no),
-            Instr('POP_TOP', lineno=line_no),
-            place_for_continue
         ]
