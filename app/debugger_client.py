@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from debugging import Debugger, DebugCommand, DebuggerExit
-from app.utils import RunnableMixin
+from .debugging import Debugger, DebugCommand, DebuggerExit
+from .utils import RunnableMixin
 
 
 class DebuggerClient(RunnableMixin, QObject):
