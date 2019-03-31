@@ -53,7 +53,7 @@ class WatcherModel(QAbstractTableModel):
 
 
 class MainWindow(QMainWindow):
-    start_clicked = pyqtSignal(str)
+    start_clicked = pyqtSignal(str, str, list)
     step_over_clicked = pyqtSignal()
     step_in_clicked = pyqtSignal()
     step_out_clicked = pyqtSignal()
@@ -64,6 +64,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle('Debugger')
 
+        self.filename = '<string>'
         self._open_act = self._create_act(
             'Open', 'open.png',
             shortcut='Ctrl+O',
@@ -152,9 +153,11 @@ class MainWindow(QMainWindow):
         return new_action
 
     def _show_open_dialog(self):
-        file_name = QFileDialog.getOpenFileName(self, 'Open file', '/home')
+        file_name = QFileDialog.getOpenFileName(
+            self, 'Open file')
 
         if file_name[0]:
+            self.filename = file_name[0]
             with open(file_name[0]) as f:
                 source = f.read()
                 self.code_editor.setPlainText(source)
@@ -167,7 +170,12 @@ class MainWindow(QMainWindow):
 
         self.code_editor.setDisabled(True)
 
-        self.start_clicked.emit(source)
+        breakpoints = [
+            brkpnt.line + 1
+            for brkpnt in self.code_editor.breakpoint_area.breakpoints
+        ]
+
+        self.start_clicked.emit(source, self.filename, breakpoints)
 
     def _step_over(self):
         self.step_over_clicked.emit()

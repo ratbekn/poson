@@ -1,6 +1,7 @@
 """Модифицирует байткод"""
 
-import types
+from types import CodeType
+from typing import List
 
 from bytecode import Bytecode, Instr, Label, Compare
 
@@ -12,7 +13,10 @@ class BytecodeModifier:
         self._trace_func = trace_func
         self._command = command
 
-    def modify(self, code, *, inner=False):
+    def modify(
+            self, code: CodeType,
+            breakpoints: List[int] = None,
+            *, inner=False, to_modify=False) -> CodeType:
         initial_bytecode = Bytecode.from_code(code)
 
         modified_bytecode = Bytecode()
@@ -22,6 +26,8 @@ class BytecodeModifier:
         modified_bytecode.name = initial_bytecode.name
         modified_bytecode.freevars = code.co_freevars
         modified_bytecode.cellvars = code.co_cellvars
+
+        first_breakpoint = min(breakpoints) if breakpoints else 1
 
         first_line_no = initial_bytecode.first_lineno
 
@@ -36,7 +42,7 @@ class BytecodeModifier:
             ])
 
         # добавляем инструкции отладки перед первой строкой модуля
-        if not inner:
+        if not inner and first_breakpoint == 1:
             modified_bytecode.extend(
                 self._get_trace_func_call_instructions(first_line_no))
 
@@ -46,13 +52,22 @@ class BytecodeModifier:
                 modified_bytecode.append(instr)
                 continue
 
-            if isinstance(instr.arg, types.CodeType):
+            if not to_modify:
+                to_modify = instr.lineno == first_breakpoint
+
+            if isinstance(instr.arg, CodeType):
                 old_instr_name = instr.name
-                new_co = self.modify(instr.arg, inner=True)
+                bc = Bytecode.from_code(instr.arg)
+                last_lineno = bc.first_lineno + len(bc) - 1
+                to_modify_inner = not (
+                        bc.first_lineno <= first_breakpoint <= last_lineno)
+                new_co = self.modify(
+                    instr.arg, breakpoints,
+                    inner=True, to_modify=to_modify_inner)
                 instr.set(old_instr_name, new_co)
 
             skip = Label()
-            if instr.lineno != previous_line_no:
+            if to_modify and instr.lineno != previous_line_no:
                 if inner:
                     modified_bytecode.extend([
                         Instr(
@@ -78,6 +93,7 @@ class BytecodeModifier:
 
                 if inner:
                     modified_bytecode.append(skip)
+
                 previous_line_no = instr.lineno
 
             modified_bytecode.append(instr)

@@ -3,7 +3,7 @@
 import sys
 from enum import Enum, auto
 from threading import Thread, Event
-from typing import Text
+from typing import Text, List
 from types import CodeType
 from queue import Queue
 
@@ -27,7 +27,7 @@ class Debugger:
         self._globals_ = {}
         self._debug_variables = [self._TRACE_FUNC, self._COMMAND, 'is_over']
 
-    def start(self, source: Text, filename: Text):
+    def start(self, source: Text, filename: Text, breakpoints: List[int]):
         """
         Запускает отладчик
 
@@ -36,6 +36,7 @@ class Debugger:
 
         :param source: исходный код программы
         :param filename: название файла откуда был прочитан исходный код
+        :param breakpoints: список номеров строк остановки отладки
         :raise EmptySourceCode: пустой исходный код
         """
         if not source:
@@ -47,7 +48,7 @@ class Debugger:
         if not self._snapshots.empty():
             self._snapshots = Queue()
 
-        modified_code = self._compile(source, filename)
+        modified_code = self._compile(source, filename, breakpoints)
 
         t = Thread(target=self._bootstrap, args=(modified_code, ), daemon=True)
         t.start()
@@ -98,14 +99,16 @@ class Debugger:
         """
         self._finished.wait()
 
-    def _compile(self, source: Text, filename: Text) -> CodeType:
+    def _compile(
+            self, source: Text, filename: Text,
+            breakpoints: List[int]) -> CodeType:
         """Компилирует исходный код программы в модифицированный байткод"""
         try:
             code = compile(source, filename, 'exec')
         except (SyntaxError, ValueError) as e:
             raise e
 
-        modified_code = self._bytecode_modifier.modify(code)
+        modified_code = self._bytecode_modifier.modify(code, breakpoints)
 
         return modified_code
 
