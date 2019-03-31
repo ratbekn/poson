@@ -2,7 +2,7 @@ from PyQt5.QtCore import pyqtSignal, Qt, QSize, QAbstractTableModel, QVariant
 from PyQt5.QtGui import QIcon, QTextCursor, QColor
 from PyQt5.QtWidgets import (
     QMainWindow, QToolBar, QStatusBar, QAction, QFileDialog, QDockWidget,
-    QLabel, qApp, QPlainTextEdit, QTableView, QHeaderView)
+    QLabel, qApp, QTableView, QHeaderView)
 
 from .code_editor import CodeEditor
 from . import resources
@@ -12,8 +12,8 @@ class WatcherModel(QAbstractTableModel):
     """
     Модель-обёртка над dict для отображения переменных в QTableView
     """
-    def __init__(self, data=None):
-        super(WatcherModel, self).__init__()
+    def __init__(self, data=None, parent=None):
+        super(WatcherModel, self).__init__(parent)
 
         self.data_model = data or {}
 
@@ -112,13 +112,14 @@ class MainWindow(QMainWindow):
         self._init_status_bar()
 
         self._globals_watcher = QTableView()
-        self._globals_watcher_model = WatcherModel()
+        self._globals_watcher_model = WatcherModel(
+            parent=self._globals_watcher)
         self._init_globals_watcher()
         self._globals_watcher_dock = QDockWidget('global variables', self)
         self._init_globals_watcher_dock()
 
         self._locals_watcher = QTableView()
-        self._locals_watcher_model = WatcherModel()
+        self._locals_watcher_model = WatcherModel(parent=self._locals_watcher)
         self._init_locals_watcher()
         self._locals_watcher_dock = QDockWidget('local variables', self)
         self._init_locals_watcher_dock()
