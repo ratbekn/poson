@@ -24,10 +24,8 @@ class Debugger:
 
         self._bytecode_modifier = BytecodeModifier(
             self._TRACE_FUNC, self._COMMAND)
-        self._globals_ = {
-            self._TRACE_FUNC: self._trace,
-            self._COMMAND: None
-        }
+        self._globals_ = {}
+        self._debug_variables = [self._TRACE_FUNC, self._COMMAND, 'is_over']
 
     def start(self, source: Text, filename: Text):
         """
@@ -123,13 +121,17 @@ class Debugger:
             self ._finished.set()
 
     def _run(self, code):
+        self._globals_ = {
+            self._TRACE_FUNC: self._trace,
+            self._COMMAND: None
+        }
         exec(code, self._globals_)
 
     def _trace(self):
         frame = sys._getframe(1)
         snapshot = {
-            'global_variables': frame.f_globals,
-            'local_variables': frame.f_locals,
+            'global_variables': self._sanitize(frame.f_globals),
+            'local_variables': self._sanitize(frame.f_locals),
             'line_no': frame.f_lineno
         }
         self._snapshots.put(snapshot)
@@ -140,3 +142,14 @@ class Debugger:
             raise DebuggerExit()
 
         self._globals_[self._COMMAND] = command
+
+    def _sanitize(self, variables):
+        sanitized = {}
+
+        for k, v in variables.copy().items():
+            if k in self._debug_variables:
+                continue
+
+            sanitized[k] = v if isinstance(v, str) else repr(v)
+
+        return sanitized
