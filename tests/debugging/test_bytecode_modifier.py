@@ -15,27 +15,6 @@ from app.debugging.bytecode_modifier import BytecodeModifier
 from app.debugging import DebugCommand
 
 
-@pytest.fixture()
-def command():
-    cmd = 'command'
-
-    return cmd
-
-
-@pytest.fixture()
-def trace_func():
-    trace = 'trace'
-
-    return trace
-
-
-@pytest.fixture()
-def bytecode_modifier(trace_func, command):
-    modifier = BytecodeModifier(trace_func, command)
-
-    return modifier
-
-
 def test_bytecode_modifier_created_correctly():
     trace_name = 'trace'
     command_name = 'command'
@@ -56,21 +35,6 @@ def test_get_trace_func_call_instructions(bytecode_modifier, trace_func):
 
     assert (bytecode_modifier._get_trace_func_call_instructions(line_no)
             == expected)
-
-
-@pytest.fixture()
-def sample_code():
-    source = '''def gcd(m, n):
-        while True:
-            if m == n:
-                return m
-            if m > n:
-                m -= n
-            else:
-                n -= m'''
-    sample = compile(source, '<string>', 'exec')
-
-    return sample
 
 
 def test_modified_code_has_saved_properties(bytecode_modifier, sample_code):
