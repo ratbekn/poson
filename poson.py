@@ -2,7 +2,9 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-from app import MainWindow, DebuggerClient, QThreadRunner
+from app.debugger_client import DebuggerClient
+from app.ui import MainWindow
+from app.utils import QThreadRunner
 
 
 def main():
