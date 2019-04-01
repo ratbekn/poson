@@ -13,8 +13,8 @@ class DebuggerClient(RunnableMixin, QObject):
 
         self._debugger = Debugger()
 
-    def start(self, source, filename='<string>'):
-        self._debugger.start(source, filename)
+    def start(self, source, filename, breakpoints):
+        self._debugger.start(source, filename, breakpoints)
 
     def step_over(self):
         self._debugger.send_command(DebugCommand.STEP_OVER)

@@ -1,6 +1,7 @@
 """Модифицирует байткод"""
 
-import types
+from types import CodeType
+from typing import List
 
 from bytecode import Bytecode, Instr, Label, Compare
 
@@ -12,7 +13,10 @@ class BytecodeModifier:
         self._trace_func = trace_func
         self._command = command
 
-    def modify(self, code, *, inner=False):
+    def modify(
+            self, code: CodeType,
+            breakpoints: List[int] = None,
+            *, inner=False) -> CodeType:
         initial_bytecode = Bytecode.from_code(code)
 
         modified_bytecode = Bytecode()
@@ -24,6 +28,14 @@ class BytecodeModifier:
         modified_bytecode.cellvars = code.co_cellvars
 
         first_line_no = initial_bytecode.first_lineno
+
+        first_breakpoint = min(breakpoints) if breakpoints else 1
+        modified_bytecode.extend([
+            Instr('LOAD_CONST', arg=first_breakpoint, lineno=first_line_no),
+            Instr('STORE_NAME', arg='first_breakpoint', lineno=first_line_no),
+            Instr('LOAD_CONST', arg=False, lineno=first_line_no),
+            Instr('STORE_NAME', arg='is_trace', lineno=first_line_no)
+        ])
 
         if inner:
             modified_bytecode.extend([
@@ -46,9 +58,10 @@ class BytecodeModifier:
                 modified_bytecode.append(instr)
                 continue
 
-            if isinstance(instr.arg, types.CodeType):
+            if isinstance(instr.arg, CodeType):
                 old_instr_name = instr.name
-                new_co = self.modify(instr.arg, inner=True)
+                new_co = self.modify(
+                    instr.arg, breakpoints, inner=True)
                 instr.set(old_instr_name, new_co)
 
             skip = Label()
@@ -78,6 +91,7 @@ class BytecodeModifier:
 
                 if inner:
                     modified_bytecode.append(skip)
+
                 previous_line_no = instr.lineno
 
             modified_bytecode.append(instr)
@@ -87,8 +101,20 @@ class BytecodeModifier:
         return code
 
     def _get_trace_func_call_instructions(self, line_no):
+        label = Label()
+        skip = Label()
         return [
+            Instr('LOAD_NAME', arg='is_trace', lineno=line_no),
+            Instr('POP_JUMP_IF_TRUE', arg=label, lineno=line_no),
+            Instr('LOAD_CONST', arg=line_no, lineno=line_no),
+            Instr('LOAD_NAME', arg='first_breakpoint', lineno=line_no),
+            Instr('COMPARE_OP', arg=Compare.EQ, lineno=line_no),
+            Instr('STORE_NAME', arg='is_trace', lineno=line_no),
+            label,
+            Instr('LOAD_NAME', arg='is_trace', lineno=line_no),
+            Instr('POP_JUMP_IF_FALSE', arg=skip, lineno=line_no),
             Instr('LOAD_GLOBAL', arg=self._trace_func, lineno=line_no),
             Instr('CALL_FUNCTION', arg=0, lineno=line_no),
-            Instr('POP_TOP', lineno=line_no)
+            Instr('POP_TOP', lineno=line_no),
+            skip
         ]

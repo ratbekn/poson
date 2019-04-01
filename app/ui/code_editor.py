@@ -42,17 +42,10 @@ class LineNumberArea(QWidget):
 
 
 class Breakpoint(QObject):
-    @property
-    def position(self):
-        try:
-            return self.block.blockNumber()
-        except AttributeError:
-            return self._position
-
-    def __init__(self, position, icon='', parent=None):
+    def __init__(self, line, icon='', parent=None):
         super(Breakpoint, self).__init__(parent)
 
-        self._position = position
+        self.line = line
         self._icon = icon
 
 
@@ -68,7 +61,7 @@ class BreakpointArea(QWidget):
     def add_breakpoint(self, brkpnt):
         self.breakpoints.append(brkpnt)
         doc = self.editor.document()
-        block = doc.findBlockByLineNumber(brkpnt._position)
+        block = doc.findBlockByLineNumber(brkpnt.line)
         brkpnt.block = block
         self.repaint()
 
@@ -82,7 +75,7 @@ class BreakpointArea(QWidget):
 
     def breakpoint_for_line(self, line):
         for brkpnt in self.breakpoints:
-            if brkpnt._position == line:
+            if brkpnt.line == line:
                 return brkpnt
 
         return None
