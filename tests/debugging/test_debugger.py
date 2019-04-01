@@ -34,7 +34,7 @@ class TestDebuggerStart:
     def test_throw_emptysourceexception_if_source_is_empty(
             self, patched_thread_start, debugger):
         with pytest.raises(EmptySourceCode):
-            debugger.start('', '<string>')
+            debugger.start('', '<string>', [])
 
     def test_new_empty_commands_if_commands_is_not_empty(
             self, patched_thread_start, debugger, sample_source):
@@ -43,7 +43,7 @@ class TestDebuggerStart:
         not_empty_commands.put(DebugCommand.STEP_OVER)
         debugger._commands = not_empty_commands
 
-        debugger.start(sample_source, '<string>')
+        debugger.start(sample_source, '<string>', [])
 
         assert debugger._commands.empty()
 
@@ -54,13 +54,13 @@ class TestDebuggerStart:
         not_empty_snapshots.put(debugger._globals_)
         debugger._snapshots = not_empty_snapshots
 
-        debugger.start(sample_source, '<string>')
+        debugger.start(sample_source, '<string>', [])
 
         assert debugger._snapshots.empty()
 
     def test_thread_start_called(
             self, patched_thread_start, debugger, sample_source):
-        debugger.start(sample_source, '<string>')
+        debugger.start(sample_source, '<string>', [])
 
         assert patched_thread_start.is_called
 
@@ -85,7 +85,7 @@ def test_get_snapshot_raise_debuggerexitexception(debugger):
 
 
 def test_finish(debugger, sample_source):
-    debugger.start(sample_source, '<string>')
+    debugger.start(sample_source, '<string>', [])
 
     debugger.finish()
     debugger.join()
@@ -95,7 +95,7 @@ def test_finish(debugger, sample_source):
 
 @pytest.fixture()
 def patch_modify(monkeypatch):
-    def patched_modify(source, filename):
+    def patched_modify(source, filename, breakpoints):
         patched_modify.is_called = True
 
     monkeypatch.setattr(BytecodeModifier, 'modify', patched_modify)
@@ -105,21 +105,21 @@ def patch_modify(monkeypatch):
 
 def test_compile_call_bytecodemodifier_modify(
         debugger, patch_modify, sample_source):
-    debugger._compile(sample_source, '<string>')
+    debugger._compile(sample_source, '<string>', [])
 
     assert patch_modify.is_called
 
 
 def test_compile_raise_exception_if_invalid_source(debugger):
     with pytest.raises(ValueError):
-        debugger._compile(b'\x00', '<string>')
+        debugger._compile(b'\x00', '<string>', [])
 
     with pytest.raises(SyntaxError):
         debugger._compile(
             '''if False:
                 pass
                else if:
-                pass''', '<string>')
+                pass''', '<string>', [])
 
 
 @pytest.fixture()

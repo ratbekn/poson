@@ -25,7 +25,9 @@ class Debugger:
         self._bytecode_modifier = BytecodeModifier(
             self._TRACE_FUNC, self._COMMAND)
         self._globals_ = {}
-        self._debug_variables = [self._TRACE_FUNC, self._COMMAND, 'is_over']
+        self._debug_variables = [
+            self._TRACE_FUNC, self._COMMAND,
+            'is_over', 'is_trace', 'first_breakpoint']
 
     def start(self, source: Text, filename: Text, breakpoints: List[int]):
         """

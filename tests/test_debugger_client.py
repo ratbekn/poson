@@ -5,7 +5,6 @@ import pytest
 
 sys.path.append(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    os.path.pardir,
     os.path.pardir))
 
 from app.debugger_client import DebuggerClient
@@ -20,7 +19,7 @@ def client():
 
 @pytest.fixture()
 def debugger_patched_start(monkeypatch):
-    def patched_start(self, source, filename):
+    def patched_start(self, source, filename, breakpoints):
         patched_start.is_called = True
 
     monkeypatch.setattr(Debugger, 'start', patched_start)
@@ -50,7 +49,7 @@ def debugger_patched_finish(monkeypatch):
 
 
 def test_start_called(debugger_patched_start, client):
-    client.start('1 + 1', '<string>')
+    client.start('1 + 1', '<string>', [])
 
     assert debugger_patched_start.is_called
 

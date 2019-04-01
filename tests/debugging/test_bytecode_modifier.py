@@ -4,7 +4,7 @@ from collections import defaultdict
 from types import CodeType
 
 import pytest
-from bytecode import Bytecode, Compare, Instr
+from bytecode import Bytecode, Compare, Instr, Label
 
 sys.path.append(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -27,14 +27,49 @@ def test_bytecode_modifier_created_correctly():
 
 def test_get_trace_func_call_instructions(bytecode_modifier, trace_func):
     line_no = 42
-    expected = [
-        Instr('LOAD_GLOBAL', arg=trace_func, lineno=line_no),
-        Instr('CALL_FUNCTION', arg=0, lineno=line_no),
-        Instr('POP_TOP', lineno=line_no)
-    ]
 
-    assert (bytecode_modifier._get_trace_func_call_instructions(line_no)
-            == expected)
+    actual = bytecode_modifier._get_trace_func_call_instructions(line_no)
+
+    assert actual[0].name == 'LOAD_NAME'
+    assert actual[0].arg == 'is_trace'
+    assert actual[0].lineno == line_no
+
+    assert actual[1].name == 'POP_JUMP_IF_TRUE'
+    assert actual[1].lineno == line_no
+
+    assert actual[2].name == 'LOAD_CONST'
+    assert actual[2].arg == line_no
+    assert actual[2].lineno == line_no
+
+    assert actual[3].name == 'LOAD_NAME'
+    assert actual[3].arg == 'first_breakpoint'
+    assert actual[3].lineno == line_no
+
+    assert actual[4].name == 'COMPARE_OP'
+    assert actual[4].arg == Compare.EQ
+    assert actual[4].lineno == line_no
+
+    assert actual[5].name == 'STORE_NAME'
+    assert actual[5].arg == 'is_trace'
+    assert actual[5].lineno == line_no
+
+    assert actual[7].name == 'LOAD_NAME'
+    assert actual[7].arg == 'is_trace'
+    assert actual[7].lineno == line_no
+
+    assert actual[8].name == 'POP_JUMP_IF_FALSE'
+    assert actual[8].lineno == line_no
+
+    assert actual[9].name == 'LOAD_GLOBAL'
+    assert actual[9].arg == trace_func
+    assert actual[9].lineno == line_no
+
+    assert actual[10].name == 'CALL_FUNCTION'
+    assert actual[10].arg == 0
+    assert actual[10].lineno == line_no
+
+    assert actual[11].name == 'POP_TOP'
+    assert actual[11].lineno == line_no
 
 
 def test_modified_code_has_saved_properties(bytecode_modifier, sample_code):

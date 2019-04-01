@@ -30,12 +30,17 @@ class BytecodeModifier:
         first_line_no = initial_bytecode.first_lineno
 
         first_breakpoint = min(breakpoints) if breakpoints else 1
-        modified_bytecode.extend([
-            Instr('LOAD_CONST', arg=first_breakpoint, lineno=first_line_no),
-            Instr('STORE_NAME', arg='first_breakpoint', lineno=first_line_no),
-            Instr('LOAD_CONST', arg=False, lineno=first_line_no),
-            Instr('STORE_NAME', arg='is_trace', lineno=first_line_no)
-        ])
+        if not inner:
+            modified_bytecode.extend([
+                Instr(
+                    'LOAD_CONST',
+                    arg=first_breakpoint, lineno=first_line_no),
+                Instr(
+                    'STORE_NAME',
+                    arg='first_breakpoint', lineno=first_line_no),
+                Instr('LOAD_CONST', arg=False, lineno=first_line_no),
+                Instr('STORE_NAME', arg='is_trace', lineno=first_line_no)
+            ])
 
         if inner:
             modified_bytecode.extend([
